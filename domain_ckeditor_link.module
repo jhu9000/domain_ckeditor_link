@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Entity\Element\EntityAutocomplete;
+use Drupal\node\Entity\Node;
+
+/**
+ * Implements hook_form_alter().
+ */
+function domain_ckeditor_link_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'editor_link_dialog' && isset($form['attributes']['href'])) {
+    if ($domain_id = \Drupal::service('domain.negotiator')->getActiveId()) {
+      $form['attributes']['href']['#type'] = 'entity_autocomplete';
+      $form['attributes']['href']['#target_type'] = 'node';
+      $form['attributes']['href']['#selection_handler'] = 'domain_ckeditor_link:node';
+      $form['attributes']['href']['#selection_settings']['domain_id'] = $domain_id;
+      $form['attributes']['href']['#description'] = t('Start typing the title of a piece of content to select it. You can also enter an external URL such as https://example.com or anchor link such as #example.');
+      $form['attributes']['href']['#element_validate'] = ['domain_ckeditor_link_element_validate'];
+      $form['attributes']['href']['#value_callback'] = [];
+
+      if ($path = $form['attributes']['href']['#default_value']) {
+        if ($path_alias_manager = \Drupal::service('path_alias.manager')) {
+          $path = $path_alias_manager->getPathByAlias($path);
+        }
+        if (preg_match('/\/node\/([0-9]+)/i', $path, $matches)) {
+          $nid = ltrim($matches[1], '0');
+          if ($node = Node::load($nid)) {
+            $form['attributes']['href']['#default_value'] = $node->label() . ' (' . $nid . ')';
+          }
+        }
+      }
+    }
+  }
+}
+
+function domain_ckeditor_link_element_validate(array &$element, FormStateInterface $form_state, array &$complete_form) {
+  if ($nid = EntityAutocomplete::extractEntityIdFromAutocompleteInput($element['#value'])) {
+    $path = '/node/' . $nid;
+    if ($path_alias_manager = \Drupal::service('path_alias.manager')) {
+      $path = $path_alias_manager->getAliasByPath($path);
+    }
+    $form_state->setValueForElement($element, $path);
+  }
+}

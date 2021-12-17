@@ -1,0 +1,8 @@
+name: 'Domain CKEditor Link'
+description: 'Modifies CKEditor link widget with autocomplete for nodes with active domain assignment.'
+type: module
+core_version_requirement: ^8.8 || ^9
+package: 'Domain'
+dependencies:
+  - domain:domain
+  - domain:domain_access
