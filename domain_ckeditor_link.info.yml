@@ -6,4 +6,5 @@ package: 'Domain'
 dependencies:
   - domain:domain
   - domain:domain_access
+  - drupal:ckeditor
   - drupal:node
